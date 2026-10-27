@@ -39,11 +39,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p docs/_next docs/previews docs/downloads _next previews downloads _site/downloads
+          mkdir -p docs/_next docs/previews docs/screens docs/downloads _next previews screens downloads _site/downloads
           rsync -a --delete _site/_next/ docs/_next/
           rsync -a --delete _site/_next/ _next/
           rsync -a --delete _site/previews/ docs/previews/
           rsync -a --delete _site/previews/ previews/
+          rsync -a --delete _site/screens/ docs/screens/
+          rsync -a --delete _site/screens/ screens/
+          for screenshot in contactos.jpg contacto-editar.jpg destinatarios.jpg; do
+            test -s "docs/screens/$screenshot"
+            test -s "screens/$screenshot"
+          done
           rsync -a --delete _site/downloads/ docs/downloads/
           rsync -a --delete _site/downloads/ downloads/
           cp _site/index.html docs/index.html
@@ -54,8 +60,8 @@ jobs:
           touch docs/.nojekyll .nojekyll
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A docs/_next docs/previews docs/downloads docs/index.html docs/updates.json docs/.nojekyll
-          git add -A _next previews downloads index.html updates.json .nojekyll
+          git add -A docs/_next docs/previews docs/screens docs/downloads docs/index.html docs/updates.json docs/.nojekyll
+          git add -A _next previews screens downloads index.html updates.json .nojekyll
           if [ -f docs/404.html ]; then git add docs/404.html; fi
           git add web/package-lock.json
           if ! git diff --cached --quiet; then

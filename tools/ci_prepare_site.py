@@ -31,6 +31,13 @@ def main():
     for name in ('paso-1.svg','paso-2.svg','paso-3.svg'):
         if not (OUT/'previews'/name).is_file():
             sys.exit('Falta recurso visual '+name)
+    for name in ('contactos.jpg', 'contacto-editar.jpg', 'destinatarios.jpg'):
+        screenshot=OUT/'screens'/name
+        if not screenshot.is_file() or screenshot.stat().st_size < 1024:
+            sys.exit(f'ERROR: Captura de interfaz ausente o vacía: {screenshot}')
+        if f'/automail/screens/{name}' not in (OUT/'index.html').read_text(encoding='utf-8'):
+            sys.exit(f'ERROR: La captura {name} no está referenciada en el HTML')
+    print('Galería: tres capturas incluidas y referenciadas correctamente')
     if DOCS.is_dir():
         dest=OUT/'documentacion'
         dest.mkdir(exist_ok=True)
