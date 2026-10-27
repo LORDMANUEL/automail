@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Correo Calendario",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Programa correos y felicitaciones desde Thunderbird, con listas CC/CCO, agenda, plantillas HTML y fotos.",
   "author": "Correo Calendario · Agradecimientos a Luis Manuel Fajardo",
   "browser_specific_settings": {
