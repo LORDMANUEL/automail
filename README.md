@@ -1,6 +1,6 @@
 # ✉️ AutoMail — Correo Calendario para Thunderbird
 
-**AutoMail 0.7.1 · Thunderbird 153 o superior · Complemento XPI independiente**
+**AutoMail 0.7.2 · Thunderbird 153 o superior · Complemento XPI independiente**
 
 [![Website](https://img.shields.io/badge/Web-AutoMail-1377ed)](https://lordmanuel.github.io/automail/)
 [![Código](https://img.shields.io/badge/Fuente-GitHub-18284a)](https://github.com/LORDMANUEL/automail)
@@ -13,21 +13,21 @@
 
 **Página oficial:** https://lordmanuel.github.io/automail/
 
-**Archivo XPI directo, V0.7.1:** https://lordmanuel.github.io/automail/downloads/correo-calendario-0.7.1.xpi\n\n**Versión anterior V0.7.0:** https://github.com/LORDMANUEL/automail/releases/tag/v0.7.0
+**Archivo XPI directo, V0.7.2:** https://lordmanuel.github.io/automail/downloads/correo-calendario-0.7.2.xpi\n\n**Versión anterior V0.7.1:** https://github.com/LORDMANUEL/automail/releases/tag/v0.7.1
 
 **Releases de GitHub:** https://github.com/LORDMANUEL/automail/releases
 
 **Manifiesto de actualización:** https://lordmanuel.github.io/automail/updates.json
 
-1. Descarga el archivo `correo-calendario-0.7.1.xpi`.
+1. Descarga el archivo `correo-calendario-0.7.2.xpi`.
 2. En Thunderbird abre **Complementos y temas** → **⚙ Instalar complemento desde archivo**.
 3. Selecciona el XPI y acepta los permisos necesarios para programar y enviar mensajes.
 4. Abre AutoMail, selecciona remitente y prueba primero con tus propias direcciones.
 5. Mantén Thunderbird ejecutándose (abierto o minimizado) y el equipo encendido para que se despachen los mensajes a la hora programada.
 
-**SHA-256 del XPI V0.7.1:** `ac89046fa92b0f2ebfcf8c27631ad93e7a6f24bb326315dd2e54e5ce343cf643`
+**SHA-256 del XPI V0.7.2:** `e329d382cbe19702a375ffcdad2413773933d12562d81b340369b5892a12976c`
 
-> La V0.7.0 establece el canal definitivo `/automail/`. Quienes usaban V0.6.x deben instalar manualmente V0.7.x una vez, porque aquellas versiones apuntaban a otro canal. La **actualización automática futura requiere prueba real V0.7.0 → V0.7.1** y que la configuración de Thunderbird permita actualizaciones automáticas.
+> La V0.7.0 establece el canal definitivo `/automail/`. Quienes usaban V0.6.x deben instalar manualmente V0.7.x una vez, porque aquellas versiones apuntaban a otro canal. La **actualización automática futura requiere prueba real V0.7.1 → V0.7.2** y que la configuración de Thunderbird permita actualizaciones automáticas.
 
 ## 🌱 Origen y necesidad
 
@@ -89,6 +89,12 @@ flowchart TD
 
 No hay recopilación de contraseñas SMTP ni un servidor de envío independiente. El equipo debe estar encendido y Thunderbird en ejecución; tampoco se ofrece sincronización bidireccional nativa con el calendario.
 
+## 🧪 Prueba de estrés de 100 programaciones (V0.7.2)
+
+La prueba automatizada genera 100 programaciones en cuatro lotes simultáneos, simula tres reinicios del motor con el mismo almacenamiento y verifica **100/100 registros conservados, 99 aceptaciones SMTP simuladas, uno en «Revisar» después de una interrupción y cero duplicados**. También comprueba un lote directo de 100 trabajos, la serialización de escrituras y el límite precautorio de cinco despachos por alarma. Ver [informe de estrés](docs/QA_STRESS_V072.md) y [notas de la versión](docs/RELEASE_V072.md).
+
+**Límite de alcance:** el resultado se obtuvo con simulación de API; no demuestra entrega SMTP real ni funcionamiento mientras Thunderbird esté cerrado. Los envíos vencidos se recuperan al reabrir la aplicación.
+
 ## 🧪 Compilación y pruebas
 
 Requisitos locales: Python 3.12+, Node.js 22+ y, para la web, npm.
@@ -109,7 +115,7 @@ Las pruebas locales cubren sintaxis JS, listas CCO, vCard, fotografías, plantil
 
 ## 🚀 Versionado y GitHub Pages
 
-Se utiliza versionado semántico `MAJOR.MINOR.PATCH`: `0.7.0`, `0.7.1`, etc. No sustituir el binario de una versión ya publicada: crear una nueva versión y un nuevo XPI.
+Se utiliza versionado semántico `MAJOR.MINOR.PATCH`: `0.7.0`, `0.7.1`, `0.7.2`, etc. No sustituir el binario de una versión ya publicada: crear una nueva versión y un nuevo XPI.
 
 - **Pages**: Actions compila Next.js y publica HTML/CSS/JS en `docs/`.
 - **XPI**: el script empaqueta el código runtime y genera SHA-256.
