@@ -454,6 +454,6 @@ bootstrap();setInterval(()=>{if(document.hidden||["redactar","plantillas"].inclu
   const version=(globalThis.messenger||globalThis.browser)?.runtime?.getManifest?.()?.version||'0.7.0';
   document.getElementById('addonVersion').textContent='Correo Calendario '+version;
   const origin='https://lordmanuel.github.io/automail/updates.json';
-  document.getElementById('addonUpdateStatus').textContent='Canal configurado: '+origin+' · Se activará al publicar GitHub Pages.';
+  document.getElementById('addonUpdateStatus').textContent='Canal HTTPS publicado: '+origin+' · La instalación de nuevas versiones la gestiona Thunderbird desde Complementos y temas.';
  }
 }

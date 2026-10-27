@@ -1,4 +1,4 @@
-/* Correo Calendario 0.7.0. Mantiene los trabajos 0.4.1 (KEY) para actualización in situ. */
+/* Correo Calendario 0.7.1. Conserva el historial y preferencias al actualizar. */
 const API = globalThis.messenger || globalThis.browser;
 const KEY="scheduledMessages", PEOPLE="cc_people", TEMPLATES="cc_templates", SETTINGS="cc_settings", LEDGER="cc_annual_ledger", LISTS="cc_recipient_lists", CONTACT_PHOTOS="cc_contact_photos";
 const ALARM="scheduled-email-tick", MAX_SEND_PER_TICK=5;
@@ -104,6 +104,7 @@ async function runDue(){if(processing)return;processing=true;
   await enqueueBirthdays();
   const due=(await jobs()).filter(j=>j.status==="pending"&&j.at<=stamp()).sort((a,b)=>a.at-b.at).slice(0,MAX_SEND_PER_TICK);
   for(const job of due){if(!await updateJob(job.id,{status:"sending",attempts:(job.attempts||0)+1,updatedAt:stamp()},"pending"))continue;
+   let planned=null;
    try{
     const identity=(await identities()).find(i=>i.id===job.identityId);if(!identity)throw Error("No existe la cuenta remitente seleccionada.");
     const people=await read(PEOPLE,[]),person=people.find(p=>p.id===job.personId);
@@ -111,6 +112,7 @@ async function runDue(){if(processing)return;processing=true;
     const mode=job.mode==="broadcast"?"broadcast":"individual";
     const details={identityId:job.identityId,to:mode==="broadcast"?[identity.email]:emailList(job.to),subject:plainInterpolate(job.subject,job,person,settings)};
     if(mode==="broadcast"){if(!job.bcc?.length||job.bcc.some(x=>!validEmail(x)))throw Error("La lista CCO no es válida.");details.bcc=job.bcc;}else{if(job.cc?.length)details.cc=job.cc;if(job.bcc?.length)details.bcc=job.bcc;}
+    planned={to:[...details.to],cc:[...(details.cc||[])],bcc:[...(details.bcc||[])]};
     if(job.html){details.body=await renderHtml(job,person,settings);details.isPlainText=false;details.deliveryFormat="both";}
     else{details.plainTextBody=plainInterpolate(job.body,job,person,settings);details.isPlainText=true;}
     const tab=await API.compose.beginNew(details);
@@ -118,12 +120,19 @@ async function runDue(){if(processing)return;processing=true;
     if(job.photoId||job.photo){const data=job.photo||await PhotoDB.get(job.photoId);if(data){const file=asFile(data,`foto-${(job.employeeCode||job.id).replace(/[^a-z0-9_-]/gi,"")}.jpg`);if(file)await API.compose.addAttachment(tab.id,{file});}}
     if(job.generatedPoster){const card=asFile(job.generatedPoster,`tarjeta-cumpleanos-${(job.employeeCode||job.id).replace(/[^a-z0-9_-]/gi,"")}.jpg`);if(card)await API.compose.addAttachment(tab.id,{file:card});}
     const result=await API.compose.sendMessage(tab.id,{mode:"sendNow"});
-    if(result?.mode!=="sendNow")throw Error("Thunderbird no confirmó el envío inmediato. Comprueba la Bandeja de salida.");
+    if(result?.error)throw Error(`Thunderbird informó un error de envío: ${result.error}`);
+    if(result?.mode!=="sendNow")throw Error("Thunderbird no confirmó el envío inmediato. Comprueba la Bandeja de salida antes de reprogramar.");
     await updateJob(job.id,{status:"sent",resolvedSubject:details.subject,sentAt:stamp(),headerMessageId:result?.headerMessageId||null,
       recipientAudit:{to:details.to||[],cc:details.cc||[],bcc:details.bcc||[],
       acceptedBy:"Thunderbird/SMTP",checkedAt:stamp(),deliveryConfirmed:false},error:null,updatedAt:stamp()},"sending");
     await notify("Correo aceptado por Thunderbird",`${details.subject} · ${mode==="broadcast"?job.bcc.length+" destinatarios CCO":job.to}`);
-   }catch(e){await updateJob(job.id,{status:"review",error:String(e?.message||e),updatedAt:stamp()},"sending");await notify("Revisar envío programado",`${job.to}: ${String(e?.message||e).slice(0,130)}`);}
+   }catch(e){
+    // La excepción no indica si el servidor SMTP procesó el mensaje: dejar revisión humana, no reintentar.
+    const recipientAudit={to:planned?.to||[job.to],cc:planned?.cc||job.cc||[],bcc:planned?.bcc||job.bcc||[],
+      acceptedBy:null,checkedAt:stamp(),deliveryConfirmed:false,uncertain:true};
+    await updateJob(job.id,{status:"review",recipientAudit,error:String(e?.message||e),updatedAt:stamp()},"sending");
+    await notify("Revisar envío programado",`${job.to}: ${String(e?.message||e).slice(0,130)}`);
+   }
   }
  }finally{processing=false;}
 }

@@ -1,13 +1,23 @@
+## 0.7.1 — 2026-10-26
+- Conservación de preferencias y trabajos durante actualización.
+- Estados de envío incierto auditables, sin reintento automático; guardar CC/CCO.
+- Corrección de ayuda de actualizaciones.
+- Pruebas nuevas de actualización y envío no confirmado.
+
 # Changelog
 
-## V0.7.0 — 2026-10-26
-Se establece LORDMANUEL/automail como repositorio definitivo, nuevo canal HTTPS de actualizaciones, documentación integral, política de privacidad y preauditoría ATN. El código fuente y XPI completos están preparados en el paquete de entrega local.
+## 0.7.0 — 26 de octubre de 2026
+- Migra la URL de actualizaciones al repositorio definitivo `LORDMANUEL/automail`.
+- Landing page de descarga y documentación más completa.
+- Reorganiza el empaquetado: no incluir scripts de build, test ni documentación interna en el XPI.
+- Incluye matriz de preauditoría ATN, política de privacidad y plan de pruebas/release.
+- Conserva el motor de envío y datos del perfil de la V0.6.2.
 
-## V0.6.2
-Preparación anterior de actualizaciones y validación SHA-256.
+## 0.6.2
+- Preparación de canal de versiones y validación de hash.
 
-## V0.6.1
-Resolución de miembros de listas Thunderbird y revisión de Para, CC y CCO.
+## 0.6.1
+- Corrección de listas y previsualización de participantes en Para/CC/CCO.
 
-## V0.6.0
-Ficha de contacto editable y redactor compacto.
+## 0.6.0
+- Ficha de contactos editable y flujo de envío mejorado.
