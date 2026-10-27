@@ -1,11 +1,21 @@
-name: Publicar AutoMail XPI
+name: AutoMail · Release XPI verificada
 on:
   push:
-    tags:
-      - 'v[0-9]*'
+    branches: [main]
+    paths:
+      - 'manifest.json'
+      - 'background.js'
+      - 'contact-manager.js'
+      - 'contact-profile.js'
+      - 'dashboard.js'
+      - 'tools/package_release.py'
+      - '.github/workflows/release.yml'
   workflow_dispatch:
 permissions:
   contents: write
+concurrency:
+  group: automail-release
+  cancel-in-progress: false
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -19,22 +29,27 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python3 tools/ci_prepare_site.py --require-package
-      - name: Comprobar coincidencia de versiones
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: |
-          python3 - <<'PY'
-          import json,os
-          version=json.load(open('manifest.json',encoding='utf8'))['version']
-          assert os.environ['GITHUB_REF_NAME']=='v'+version, 'Versiones inconsistentes'
-          PY
-      - name: Crear GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Compilar y probar fuentes completas del complemento
+        run: python3 tools/ci_prepare_site.py --require-package
+      - name: Crear release inmutable por versión
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
           set -euo pipefail
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="$(python3 -c 'import json;print(json.load(open("manifest.json"))["version"])')"
+          TAG="v${VERSION}"
           FILE="_site/downloads/correo-calendario-${VERSION}.xpi"
           test -s "$FILE"
-          gh release create "$GITHUB_REF_NAME" "$FILE" --repo "$GITHUB_REPOSITORY" --title "AutoMail ${VERSION}" --generate-notes
+          SHA="$(sha256sum "$FILE" | cut -d' ' -f1)"
+          echo "Versión: $VERSION"
+          echo "SHA256: $SHA"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG ya existe; no sobrescribir binario publicado."
+            exit 0
+          fi
+          gh release create "$TAG" "$FILE" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "AutoMail $VERSION · Thunderbird 153+" \
+            --notes "XPI compilado en GitHub Actions. SHA-256: $SHA. Consulta README, App Flow, política de privacidad y notas de QA. Thunderbird debe permanecer abierto para envíos programados. No equivale a aprobación ATN."
