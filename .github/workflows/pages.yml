@@ -1,4 +1,4 @@
-name: AutoMail · Next.js y GitHub Pages
+name: AutoMail · Generar Next.js y publicar desde la rama
 on:
   push:
     branches: [main]
@@ -13,8 +13,6 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
-  pages: write
-  id-token: write
 concurrency:
   group: automail-pages
   cancel-in-progress: false
@@ -66,16 +64,3 @@ jobs:
           else
             echo "Sitio sin cambios para publicar"
           fi
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
-        with:
-          path: _site
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
