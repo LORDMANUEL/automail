@@ -1,6 +1,6 @@
 # ✉️ AutoMail — Correo Calendario para Thunderbird
 
-**AutoMail 0.7.0 · Thunderbird 153 o superior · Complemento XPI independiente**
+**AutoMail 0.7.1 · Thunderbird 153 o superior · Complemento XPI independiente**
 
 [![Website](https://img.shields.io/badge/Web-AutoMail-1377ed)](https://lordmanuel.github.io/automail/)
 [![Código](https://img.shields.io/badge/Fuente-GitHub-18284a)](https://github.com/LORDMANUEL/automail)
@@ -13,21 +13,21 @@
 
 **Página oficial:** https://lordmanuel.github.io/automail/
 
-**Archivo XPI directo, V0.7.0:** https://lordmanuel.github.io/automail/downloads/correo-calendario-0.7.0.xpi
+**Archivo XPI directo, V0.7.1:** https://lordmanuel.github.io/automail/downloads/correo-calendario-0.7.1.xpi\n\n**Versión anterior V0.7.0:** https://github.com/LORDMANUEL/automail/releases/tag/v0.7.0
 
 **Releases de GitHub:** https://github.com/LORDMANUEL/automail/releases
 
 **Manifiesto de actualización:** https://lordmanuel.github.io/automail/updates.json
 
-1. Descarga el archivo `correo-calendario-0.7.0.xpi`.
+1. Descarga el archivo `correo-calendario-0.7.1.xpi`.
 2. En Thunderbird abre **Complementos y temas** → **⚙ Instalar complemento desde archivo**.
 3. Selecciona el XPI y acepta los permisos necesarios para programar y enviar mensajes.
 4. Abre AutoMail, selecciona remitente y prueba primero con tus propias direcciones.
 5. Mantén Thunderbird ejecutándose (abierto o minimizado) y el equipo encendido para que se despachen los mensajes a la hora programada.
 
-**SHA-256 del XPI V0.7.0:** `c8d6aacdebbeded89d410e1a668fd58ba4be09057ce4e6adb30722563948ba9a`
+**SHA-256 del XPI V0.7.1:** `ac89046fa92b0f2ebfcf8c27631ad93e7a6f24bb326315dd2e54e5ce343cf643`
 
-> La V0.7.0 establece el canal definitivo `/automail/`. Quienes usaban V0.6.x deben actualizar manualmente una vez, porque aquellas versiones apuntaban a otro canal. La **actualización automática futura requiere prueba real V0.7.0 → V0.7.1** y que la configuración de Thunderbird permita actualizaciones automáticas.
+> La V0.7.0 establece el canal definitivo `/automail/`. Quienes usaban V0.6.x deben instalar manualmente V0.7.x una vez, porque aquellas versiones apuntaban a otro canal. La **actualización automática futura requiere prueba real V0.7.0 → V0.7.1** y que la configuración de Thunderbird permita actualizaciones automáticas.
 
 ## 🌱 Origen y necesidad
 
