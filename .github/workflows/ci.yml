@@ -1,4 +1,4 @@
-name: Revisar código y sitio
+name: Validar AutoMail Next.js
 on:
   pull_request:
     branches: [main]
@@ -13,8 +13,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Instalar dependencias
+        run: npm install --prefix web --no-audit --no-fund
+      - name: Compilar Next.js
+        run: npm run build --prefix web
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: QA de sitio y empaquetado reproducible
-        run: python3 tools/ci_prepare_site.py
+      - run: python3 tools/ci_prepare_site.py
