@@ -1,8 +1,22 @@
-/* Correo Calendario 0.7.1. Conserva el historial y preferencias al actualizar. */
+/* Correo Calendario 0.7.2. Persistencia transaccional de programaciones y recuperación segura. */
 const API = globalThis.messenger || globalThis.browser;
 const KEY="scheduledMessages", PEOPLE="cc_people", TEMPLATES="cc_templates", SETTINGS="cc_settings", LEDGER="cc_annual_ledger", LISTS="cc_recipient_lists", CONTACT_PHOTOS="cc_contact_photos";
 const ALARM="scheduled-email-tick", MAX_SEND_PER_TICK=5;
 let processing=false;
+// Serialización de todos los cambios en la misma colección: evita pérdidas cuando
+// varios formularios programan o cancelan simultáneamente mientras corre un envío.
+let jobsMutation=Promise.resolve();
+function mutateJobs(callback){
+  const work=jobsMutation.then(async()=>{
+    const list=await jobs();
+    const result=await callback(list);
+    if(result?.changed)await write(KEY,list);
+    return result?.value;
+  });
+  jobsMutation=work.then(()=>undefined,()=>undefined);
+  return work;
+}
+let initialized=false, initialization=null;
 const stamp=()=>Date.now();
 const safeText=s=>String(s??"");
 const emailList=s=>String(s??"").split(/[;,\n]+/).map(v=>v.trim()).filter(Boolean);
@@ -27,7 +41,16 @@ async function ensureDefaults(){const d=await API.storage.local.get([PEOPLE,TEMP
   }if(!d[SETTINGS])await write(SETTINGS,{company:"Mi organización",defaultIdentityId:"",defaultTemplateId:"builtin-birthday",defaultTime:"09:00",logoAssetId:"",footerAssetId:"",autoNativeBirthday:false,birthdayCopyGroupId:"",birthdayCopyMode:"bcc",website:"",socials:{facebook:"",instagram:"",linkedin:""}});if(!d[LEDGER])await write(LEDGER,{});if(!Array.isArray(d[LISTS]))await write(LISTS,[]);if(!d[CONTACT_PHOTOS])await write(CONTACT_PHOTOS,{});}
 async function emit(type,data={}){try{await API.runtime.sendMessage({event:true,type,...data});}catch(_){/*panel cerrado*/}}
 async function notify(title,message){try{await API.notifications.create({type:"basic",iconUrl:API.runtime.getURL("icons/icon-128.png"),title,message});}catch(e){console.warn("Notificación no disponible",e);}}
-async function updateJob(id,patch,expected){const list=await jobs(),i=list.findIndex(x=>x.id===id);if(i<0||(expected&&list[i].status!==expected))return false;list[i]={...list[i],...patch};await write(KEY,list);await emit("jobChanged",{id,status:list[i].status});return true;}
+async function updateJob(id,patch,expected){
+  const status=await mutateJobs(list=>{
+    const i=list.findIndex(x=>x.id===id);
+    if(i<0||(expected&&list[i].status!==expected))return {changed:false,value:null};
+    list[i]={...list[i],...patch};
+    return {changed:true,value:list[i].status};
+  });
+  if(status!==null)await emit("jobChanged",{id,status});
+  return status!==null;
+}
 function validBirthdayDate(s){if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return false;const [y,m,d]=s.split("-").map(Number);const actual=new Date(y,m-1,d);return actual.getFullYear()===y&&actual.getMonth()===m-1&&actual.getDate()===d;}
 function validateNew(job,now=stamp()){
   if(!job.identityId||!job.subject?.trim())throw Error("Cuenta y asunto son obligatorios.");
@@ -50,9 +73,10 @@ function validateNew(job,now=stamp()){
   return recipients;
 }
 function prepareJob(data){return {id:crypto.randomUUID(),schemaVersion:7,mode:data.mode==="broadcast"?"broadcast":"individual",cc:emailList(Array.isArray(data.cc)?data.cc.join(","):data.cc),bcc:emailList(Array.isArray(data.bcc)?data.bcc.join(","):data.bcc),identityId:data.identityId,to:emailList(data.to)[0]||"",subject:safeText(data.subject).trim(),body:safeText(data.body),messageText:safeText(data.messageText),html:safeText(data.html),css:safeText(data.css||""),emailAnimation:data.emailAnimation!==false,at:data.at,personId:data.personId||null,personName:safeText(data.personName),position:safeText(data.position),branch:safeText(data.branch),employeeCode:safeText(data.employeeCode),photoId:data.photoId||null,recurringKey:data.recurringKey||null,template:data.template||"html",status:"pending",attempts:0,error:null,createdAt:stamp(),updatedAt:stamp()};}
-async function createBatch(input){const arr=Array.isArray(input)?input:[];if(!arr.length||arr.length>30)throw Error("Programa entre 1 y 30 destinatarios por operación.");const ids=await identities();const now=stamp(),prepared=[];
+async function createBatch(input){const arr=Array.isArray(input)?input:[];if(!arr.length||arr.length>100)throw Error("Programa entre 1 y 100 correos por operación.");const ids=await identities();const now=stamp(),prepared=[];
   for(const j of arr){validateNew(j,now);if(!ids.some(i=>i.id===j.identityId))throw Error("Cuenta de correo no disponible.");prepared.push(prepareJob(j));}
-  const existing=await jobs();await write(KEY,[...existing,...prepared]);await emit("scheduled",{count:prepared.length});return prepared;
+  await mutateJobs(list=>{list.push(...prepared);return {changed:true,value:true};});
+  await emit("scheduled",{count:prepared.length});return prepared;
 }
 function escapeHTML(s){return safeText(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));}
 function sanitizeHTML(html,css="",progressive=true){
@@ -146,7 +170,8 @@ async function enqueueBirthdays(){
  if(!people.length)return;
  const groupId=settings.birthdayCopyGroupId||"",copy=groupId?contacts.filter(c=>groupId.startsWith("book:")?c.bookId===groupId.slice(5):(c.listIds||[]).includes(groupId.slice(5))):[];
  const templates=await read(TEMPLATES,[]),t=templates.find(x=>x.id===settings.defaultTemplateId)||CC_DEFAULT_TEMPLATES[0];
- const ledger=await read(LEDGER,{}),list=await jobs();let changed=false;
+ const wasChanged=await mutateJobs(async list=>{
+ const ledger=await read(LEDGER,{});let changed=false;
  for(const c of people){const key=`native:${c.id}:${now.getFullYear()}`;
   if(ledger[key]||list.some(j=>j.recurringKey===key))continue;
   // No volver a enviar el mismo año si la V0.5.x dejó una felicitación pendiente o enviada.
@@ -155,7 +180,10 @@ async function enqueueBirthdays(){
   const data={mode:"individual",to:c.email,cc:settings.birthdayCopyMode==="cc"?recipients:[],bcc:settings.birthdayCopyMode==="bcc"?recipients:[],identityId:settings.defaultIdentityId,subject:t.subject,html:t.html,css:t.css||"",at:Math.max(due,stamp()),personName:c.name,position:c.position||"",branch:c.branch||"",employeeCode:c.code,photoId:(await read(CONTACT_PHOTOS,{}))[c.id]?.photoId||null,recurringKey:key,template:t.id};
   try{validateNew(data,stamp());list.push(prepareJob(data));ledger[key]={createdAt:stamp(),jobId:list.at(-1).id};changed=true;}catch(e){console.warn("No programado",c.id,e);}
  }
- if(changed){await write(KEY,list);await write(LEDGER,ledger);await emit("birthdayQueued");}
+ if(changed)await write(LEDGER,ledger);
+ return {changed,value:changed};
+ });
+ if(wasChanged)await emit("birthdayQueued");
 }
 
 async function savePerson(person){
@@ -164,7 +192,7 @@ async function savePerson(person){
  if(people.some(x=>x.id!==p.id&&x.email.toLowerCase()===p.email.toLowerCase()))throw Error("Ya existe un empleado con ese correo.");
  if(p.code&&people.some(x=>x.id!==p.id&&x.code&&x.code.toLowerCase()===p.code.toLowerCase()))throw Error("Ya existe un empleado con ese código; verifica los datos para evitar confundir fotografías.");
  if(p.automatic&&!p.identityId&&!(await read(SETTINGS,{})).defaultIdentityId)throw Error("Selecciona una cuenta remitente en Configuración antes de activar automatización.");
- const index=people.findIndex(x=>x.id===p.id);if(index>=0)people[index]=p;else people.push(p);await write(PEOPLE,people);if(!p.automatic){const list=await jobs();let changed=false;for(const j of list){if(j.status==="pending"&&j.recurringKey?.startsWith(p.id+"-")){j.status="cancelled";j.updatedAt=stamp();changed=true;}}if(changed)await write(KEY,list);}await emit("personChanged");return p;
+ const index=people.findIndex(x=>x.id===p.id);if(index>=0)people[index]=p;else people.push(p);await write(PEOPLE,people);if(!p.automatic){await mutateJobs(list=>{let changed=false;for(const j of list){if(j.status==="pending"&&j.recurringKey?.startsWith(p.id+"-")){j.status="cancelled";j.updatedAt=stamp();changed=true;}}return {changed,value:changed};});}await emit("personChanged");return p;
 }
 async function saveTemplate(template){const entries=await read(TEMPLATES,[]);const t={id:template.id||crypto.randomUUID(),name:safeText(template.name).trim().slice(0,120),category:template.category==="birthday"?"birthday":"notice",subject:safeText(template.subject).trim().slice(0,260),html:safeText(template.html),css:safeText(template.css||""),emailAnimation:template.emailAnimation!==false,builtin:false};CCEmailCSS.analyze(t.html,t.css);if(!t.name||!t.subject||!t.html||t.html.length>140000)throw Error("Plantilla: nombre, asunto y HTML válidos son obligatorios.");const index=entries.findIndex(x=>x.id===t.id);if(index>=0)entries[index]=t;else entries.push(t);await write(TEMPLATES,entries);return t;}
 // Thunderbird 128+ devuelve ContactNode.vCard directamente; properties es un formato antiguo.
@@ -212,7 +240,30 @@ async function getContactDirectory(){
 }
 async function getContacts(){return (await getContactDirectory()).contacts;}
 async function listState(){const d=await API.storage.local.get([KEY,PEOPLE,TEMPLATES,SETTINGS,LISTS]);return {jobs:d[KEY]||[],people:d[PEOPLE]||[],templates:d[TEMPLATES]||CC_DEFAULT_TEMPLATES,settings:d[SETTINGS]||{},lists:d[LISTS]||[],contactPhotos:await read(CONTACT_PHOTOS,{})};}
-async function init(){await ensureDefaults();const list=await jobs();let changed=false;for(const j of list){if(j.status==="sending"){j.status="review";j.error="Thunderbird se cerró o se interrumpió durante el envío. Revisa Enviados antes de reprogramar.";changed=true;}}if(changed)await write(KEY,list);await API.alarms.create(ALARM,{periodInMinutes:1});await runDue();}
+async function init(){
+  // onInstalled, onStartup y carga del background pueden coincidir. La reparación
+  // de trabajos interrumpidos se hace exactamente una vez por proceso, no durante
+  // otro envío que todavía está ejecutándose en este mismo background.
+  if(initialization)return initialization;
+  if(initialized)return;
+  initialization=(async()=>{
+    await ensureDefaults();
+    await mutateJobs(list=>{
+      let changed=false;
+      for(const j of list)if(j.status==="sending"){
+        j.status="review";
+        j.error="Thunderbird se cerró o se interrumpió durante el envío. Revisa Enviados antes de reprogramar.";
+        j.updatedAt=stamp();changed=true;
+      }
+      return {changed,value:changed};
+    });
+    await API.alarms.create(ALARM,{periodInMinutes:1});
+    initialized=true;
+    await runDue();
+  })();
+  try{return await initialization;}
+  finally{initialization=null;}
+}
 API.action.onClicked.addListener(()=>API.tabs.create({url:API.runtime.getURL("dashboard.html")}));
 API.alarms.onAlarm.addListener(a=>{if(a.name===ALARM)runDue().catch(console.error);});
 API.runtime.onMessage.addListener(async req=>{
@@ -276,7 +327,7 @@ API.runtime.onMessage.addListener(async req=>{
   }
   case "createBatch":return createBatch(req.jobs);case "create":return (await createBatch([req.job]))[0];
   case "cancel":{if(!await updateJob(req.id,{status:"cancelled",updatedAt:stamp()},"pending"))throw Error("Solo se puede cancelar un pendiente.");return true;}
-  case "delete":{const a=await jobs(),one=a.find(j=>j.id===req.id);if(!one||["sending","pending"].includes(one.status))throw Error("Cancela primero el envío.");await write(KEY,a.filter(j=>j.id!==req.id));return true;}
+  case "delete":{await mutateJobs(list=>{const one=list.find(j=>j.id===req.id);if(!one||["sending","pending"].includes(one.status))throw Error("Cancela primero el envío.");list.splice(list.indexOf(one),1);return {changed:true,value:true};});return true;}
   case "attachPhotos":{
     const links=req.links||[];if(!Array.isArray(links)||!links.length||links.length>500)throw Error("Selecciona de 1 a 500 asociaciones.");
     const people=await read(PEOPLE,[]),used=new Set(),updates=new Map();
@@ -303,11 +354,12 @@ API.runtime.onMessage.addListener(async req=>{
   case "scheduleBirthdaysForDate":{
     if(!/^\d{4}-\d{2}-\d{2}$/.test(req.date))throw Error("Fecha incorrecta.");
     const day=new Date(req.date+"T12:00:00"),now=new Date();if(!Number.isFinite(day.getTime())||day.getTime()<new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime())throw Error("Selecciona hoy o una fecha posterior.");
-    const directory=await getContactDirectory(),settings=await read(SETTINGS,{}),templates=await read(TEMPLATES,[]),existing=await jobs(),ledger=await read(LEDGER,{});
+    const directory=await getContactDirectory(),settings=await read(SETTINGS,{}),templates=await read(TEMPLATES,[]);
     if(!settings.defaultIdentityId)throw Error("Configura una cuenta remitente antes de programar.");
     const mmdd=req.date.slice(5),match=[...new Map(directory.contacts.filter(c=>c.birthday?.slice(5)===mmdd).map(c=>[c.email.toLowerCase(),c])).values()],groupId=settings.birthdayCopyGroupId||"";
     const copy=groupId?directory.contacts.filter(c=>groupId.startsWith("book:")?c.bookId===groupId.slice(5):(c.listIds||[]).includes(groupId.slice(5))):[];
-    const t=templates.find(x=>x.id===settings.defaultTemplateId)||CC_DEFAULT_TEMPLATES[0];let count=0;
+    const t=templates.find(x=>x.id===settings.defaultTemplateId)||CC_DEFAULT_TEMPLATES[0];
+    const count=await mutateJobs(async existing=>{const ledger=await read(LEDGER,{});let count=0;
     for(const c of match){const key=`native:${c.id}:${req.date.slice(0,4)}`;
       if(ledger[key]||existing.some(j=>j.recurringKey===key)||existing.some(j=>j.to?.toLowerCase()===c.email.toLowerCase()&&j.status!=="cancelled"&&new Date(j.at).toDateString()===day.toDateString()&&(j.recurringKey||/cumple|birthday/i.test(j.template||"")||/cumple|birthday/i.test(j.subject||""))))continue;
       const others=[...new Set(copy.map(x=>x.email.toLowerCase()).filter(x=>x!==c.email.toLowerCase()))];
@@ -315,7 +367,10 @@ API.runtime.onMessage.addListener(async req=>{
       const data={mode:"individual",to:c.email,cc:settings.birthdayCopyMode==="cc"?others:[],bcc:settings.birthdayCopyMode==="bcc"?others:[],identityId:settings.defaultIdentityId,subject:t.subject,html:t.html,css:t.css||"",at:when,personName:c.name,position:c.position||"",branch:c.branch||"",employeeCode:c.code,photoId:(await read(CONTACT_PHOTOS,{}))[c.id]?.photoId||null,recurringKey:key,template:t.id};
       validateNew(data,stamp());existing.push(prepareJob(data));ledger[key]={jobId:existing.at(-1).id,createdAt:stamp()};count++;
     }
-    if(count){await write(KEY,existing);await write(LEDGER,ledger);await emit("birthdayQueued");}
+    if(count)await write(LEDGER,ledger);
+    return {changed:count>0,value:count};
+    });
+    if(count)await emit("birthdayQueued");
     return {count};
   }
   case "deleteTemplate":{const t=await read(TEMPLATES,[]);await write(TEMPLATES,t.filter(x=>x.id!==req.id));return true;}
