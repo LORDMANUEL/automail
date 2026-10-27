@@ -1,0 +1,18 @@
+{
+  "addons": {
+    "correo-calendario@local.addon": {
+      "updates": [
+        {
+          "version": "0.7.0",
+          "update_link": "https://lordmanuel.github.io/automail/downloads/correo-calendario-0.7.0.xpi",
+          "update_hash": "sha256:c8d6aacdebbeded89d410e1a668fd58ba4be09057ce4e6adb30722563948ba9a",
+          "applications": {
+            "gecko": {
+              "strict_min_version": "153.0"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
