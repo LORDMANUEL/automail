@@ -1,29 +1,23 @@
-name: Publicar AutoMail en GitHub Pages
-
+name: Publicar AutoMail (Next.js)
 on:
   push:
     branches: [main]
     paths:
+      - 'web/**'
       - 'docs/**'
       - 'tools/**'
       - 'manifest.json'
-      - '*.js'
-      - '*.html'
-      - '*.css'
-      - 'icons/**'
-      - 'assets/**'
+      - 'background.js'
+      - 'dashboard.js'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
-
 permissions:
   contents: read
   pages: write
   id-token: write
-
 concurrency:
   group: automail-pages
   cancel-in-progress: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -32,10 +26,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Instalar dependencias web
+        run: npm install --prefix web --no-audit --no-fund
+      - name: Compilar sitio Next.js
+        run: npm run build --prefix web
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Validar web, compilar XPI cuando exista su fuente y comprobar updates.json
+      - name: Verificar sitio y preparar canal XPI
         run: python3 tools/ci_prepare_site.py
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4

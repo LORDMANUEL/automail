@@ -1,14 +1,11 @@
-name: Publicar lanzamiento XPI
-
+name: Publicar AutoMail XPI
 on:
   push:
     tags:
       - 'v[0-9]*'
   workflow_dispatch:
-
 permissions:
   contents: write
-
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -17,29 +14,27 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: npm install --prefix web --no-audit --no-fund
+      - run: npm run build --prefix web
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Exigir fuentes completas y pasar verificaciones
-        run: python3 tools/ci_prepare_site.py --require-package
-      - name: Comprobar versión de etiqueta y manifest
+      - run: python3 tools/ci_prepare_site.py --require-package
+      - name: Comprobar coincidencia de versiones
         if: startsWith(github.ref, 'refs/tags/v')
-        shell: bash
         run: |
           python3 - <<'PY'
-          import json, os
-          manifest=json.load(open('manifest.json', encoding='utf8'))
-          assert os.environ['GITHUB_REF_NAME']=='v'+manifest['version'], 'La etiqueta y manifest.json tienen versiones diferentes'
-          print('Versión de etiqueta verificada:', manifest['version'])
+          import json,os
+          version=json.load(open('manifest.json',encoding='utf8'))['version']
+          assert os.environ['GITHUB_REF_NAME']=='v'+version, 'Versiones inconsistentes'
           PY
-      - name: Publicar release y archivo XPI
+      - name: Crear GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
-        shell: bash
         run: |
           set -euo pipefail
           VERSION="${GITHUB_REF_NAME#v}"
           FILE="_site/downloads/correo-calendario-${VERSION}.xpi"
           test -s "$FILE"
-          gh release create "$GITHUB_REF_NAME" "$FILE" --repo "$GITHUB_REPOSITORY" --title "AutoMail ${VERSION}" --notes "AutoMail ${VERSION} para Thunderbird 153+. Consulta la documentación y el historial de cambios. Requiere mantener Thunderbird en ejecución para los envíos programados."
+          gh release create "$GITHUB_REF_NAME" "$FILE" --repo "$GITHUB_REPOSITORY" --title "AutoMail ${VERSION}" --generate-notes
