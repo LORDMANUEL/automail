@@ -1,52 +1,143 @@
 # ✉️ AutoMail — Correo Calendario para Thunderbird
 
-**V0.7.0 · Thunderbird 153+ · Proyecto en preparación de publicación**
+**AutoMail 0.7.0 · Thunderbird 153 o superior · Complemento XPI independiente**
 
-AutoMail automatiza felicitaciones, comunicados y correos programados desde las cuentas existentes de Thunderbird. Permite un solo mensaje con múltiples destinatarios ocultos en CCO, o una felicitación a una persona con copia visible (CC) u oculta (CCO). Utiliza las libretas y listas nativas; RRHH y SAC son casos de uso, no módulos obligatorios.
+[![Website](https://img.shields.io/badge/Web-AutoMail-1377ed)](https://lordmanuel.github.io/automail/)
+[![Código](https://img.shields.io/badge/Fuente-GitHub-18284a)](https://github.com/LORDMANUEL/automail)
+[![Releases](https://img.shields.io/badge/XPI-Versiones-1f81ec)](https://github.com/LORDMANUEL/automail/releases)
+[![Acciones](https://img.shields.io/github/actions/workflow/status/LORDMANUEL/automail/pages.yml?label=GitHub%20Pages)](https://github.com/LORDMANUEL/automail/actions)
 
-## ¿Por qué existe?
-El proyecto nació de una necesidad real: evitar fechas olvidadas, duplicaciones de contactos, composiciones manuales repetitivas y mensajes cuyos participantes no podían verificarse. Las versiones iniciales se probaron en Thunderbird y se corrigieron problemas de API de envío, fotos, plantillas, calendarios y listas.
+> **Objetivo:** hacer sencillo programar correos, felicitaciones y comunicados usando las cuentas, contactos y listas que ya existen en Thunderbird. No requiere servidor adicional ni pedir de nuevo las credenciales SMTP.
 
-## Visión y objetivos
-Un complemento local, ligero, seguro, universal y fácil de usar. Su flujo ideal es **destinatarios → mensaje/plantilla → revisar y programar**. Debe permitir visualizar Para, CC y CCO antes de enviar, conservar el historial y publicar actualizaciones reproducibles por HTTPS.
+## 📦 Descarga e instalación
 
-## Documentación del proyecto
-- [Origen, visión y objetivos](docs/ORIGEN_Y_VISION.md)
-- [PRD — requisitos del producto](docs/PRD.md)
-- [TRD — arquitectura técnica](docs/TRD.md)
-- [App Flow](docs/APP_FLOW.md)
-- [Roadmap y metas](docs/ROADMAP.md)
-- [Política de privacidad](docs/PRIVACY.md)
-- [Revisión preliminar Mozilla/ATN](docs/MOZILLA_REVIEW.md)
-- [QA y pendientes](docs/QA.md)
-- [Versiones y canal de actualizaciones](docs/RELEASE.md)
-- [Historial de cambios](docs/CHANGELOG.md)
+**Página oficial:** https://lordmanuel.github.io/automail/
 
-## GitHub Pages
-La página informativa está en [docs/index.html](docs/index.html). Se puede publicar activando **Settings → Pages → Build and deployment → Deploy from a branch → main /docs**.
+**Archivo XPI directo, V0.7.0:** https://lordmanuel.github.io/automail/downloads/correo-calendario-0.7.0.xpi
 
-**Dirección prevista:** https://lordmanuel.github.io/automail/
+**Releases de GitHub:** https://github.com/LORDMANUEL/automail/releases
 
-**Canal previsto de actualizaciones:** https://lordmanuel.github.io/automail/updates.json
+**Manifiesto de actualización:** https://lordmanuel.github.io/automail/updates.json
 
-## Estado real de la V0.7.0
-✅ Proyecto documentado y PR #1 fusionado.
+1. Descarga el archivo `correo-calendario-0.7.0.xpi`.
+2. En Thunderbird abre **Complementos y temas** → **⚙ Instalar complemento desde archivo**.
+3. Selecciona el XPI y acepta los permisos necesarios para programar y enviar mensajes.
+4. Abre AutoMail, selecciona remitente y prueba primero con tus propias direcciones.
+5. Mantén Thunderbird ejecutándose (abierto o minimizado) y el equipo encendido para que se despachen los mensajes a la hora programada.
 
-✅ Artefactos locales generados: XPI, código fuente completo, paquete Pages y SHA-256.
+**SHA-256 del XPI V0.7.0:** `c8d6aacdebbeded89d410e1a668fd58ba4be09057ce4e6adb30722563948ba9a`
 
-✅ Pruebas de sintaxis, vCard, listas CCO e integridad en entorno local.
+> La V0.7.0 establece el canal definitivo `/automail/`. Quienes usaban V0.6.x deben actualizar manualmente una vez, porque aquellas versiones apuntaban a otro canal. La **actualización automática futura requiere prueba real V0.7.0 → V0.7.1** y que la configuración de Thunderbird permita actualizaciones automáticas.
 
-⚠️ El **XPI y los archivos de código completos todavía deben subirse a este repositorio** desde el paquete de entrega. El manifiesto público de actualizaciones permanece deliberadamente vacío; no anunciará descargas inexistentes.
+## 🌱 Origen y necesidad
 
-⚠️ GitHub Pages no se ha verificado en vivo. Falta activar Pages y publicar el binario.
+AutoMail surgió de tareas reales de comunicación: felicitar a alguien con copia al equipo, evitar repetir cada saludo, aprovechar las listas de Thunderbird, administrar fotografías sin asignarlas a la persona equivocada y controlar exactamente a quién se manda cada mensaje. Se corrigieron problemas reportados de envíos individuales inesperados, listas CCO incompletas, plantillas con variables sin reemplazar, fotos y diseño en pantallas pequeñas.
 
-⚠️ Sin prueba SMTP real de V0.7.0 ni prueba de actualización 0.7.0→0.7.1. Sin revisión oficial Mozilla/ATN.
+Es un complemento **de uso general**: personal, educativo, empresas, Recursos Humanos y Servicio de Atención al Cliente son casos de uso, no módulos ni dependencias obligatorias.
 
-## Publicación del paquete completo
-Clona este repositorio con GitHub Desktop, copia dentro de la carpeta clonada los archivos descomprimidos de `automail-0.7.0-codigo-completo.zip`, crea un commit y haz **Push**. Verifica que `site/downloads/correo-calendario-0.7.0.xpi` y `site/updates.json` aparezcan en GitHub. El paquete incluye un workflow GitHub Actions para validación y despliegue desde `site/`, que podrá usarse seleccionando **GitHub Actions** como origen de Pages.
+## 🎯 Visión, objetivos y métricas
 
-Una vez publicada V0.7.0, las siguientes versiones deberán mantener el mismo ID `correo-calendario@local.addon`, aumentar versión y actualizar `updates.json` con el SHA-256 del XPI. Los usuarios de V0.6.x deben instalar la V0.7.0 manualmente una vez para adoptar el nuevo canal.
+La visión es ofrecer un programador de correo ligero, seguro, fácil de aprender y auditable, que conserve en Thunderbird el control de las cuentas.
 
-**Condición de funcionamiento:** Thunderbird abierto/minimizado y PC encendida. La aceptación SMTP no garantiza recepción final por cada buzón.
+**Objetivos funcionales:** tres pasos para crear un envío, reutilizar contactos vCard y listas nativas, separar Para/CC/CCO, personalizar HTML/fotos, programar, mantener historial y distribuir versiones verificables por HTTPS.
+
+**Criterios de calidad:** no generar duplicados ambiguos, bloquear listas incompletas antes del envío, validar variables de plantillas y proteger contactos/fotografías. La aceptación del envío por Thunderbird o SMTP no garantiza entrega final en cada buzón.
+
+## 🔁 App Flow
+
+```mermaid
+flowchart TD
+    A[Inicio AutoMail] --> B[1. Elegir contacto o lista Thunderbird]
+    B --> C{Tipo de mensaje}
+    C -->|Comunicado| D[Un correo con múltiples CCO]
+    C -->|Felicitación| E[Persona principal + CC o CCO]
+    C -->|Personalizado| F[Un mensaje por persona]
+    D --> G[2. Seleccionar plantilla y escribir texto]
+    E --> G
+    F --> G
+    G --> H[Foto y variables del contacto]
+    H --> I[3. Confirmar Para CC CCO fecha y hora]
+    I --> J[Guardar programación local]
+    J --> K[Alarma con Thunderbird activo]
+    K --> L[Enviar por cuenta configurada]
+    L --> M[Historial y notificación]
+```
+
+## ✨ Funcionalidades
+
+- Calendario interno, programación por fecha y hora, pendientes y avisos.
+- Un comunicado con múltiples destinatarios en **CCO**.
+- Felicitación dirigida a un contacto, con copia a compañeros en **CC o CCO**.
+- Agenda nativa de Thunderbird: libretas, listas, búsquedas y cumpleaños `BDAY`.
+- Edición de datos del contacto y fotografía asociada por ID de vCard, cuando la libreta permite escritura.
+- Plantillas reutilizables HTML/CSS, fotos y campos dinámicos.
+- Interfaz claro/oscuro, adaptable a laptops, con escala ajustable.
+- Almacenamiento local y mecanismo de actualización mediante manifiesto HTTPS y SHA-256.
+
+## 🏗️ Arquitectura
+
+| Componente | Responsabilidad |
+| --- | --- |
+| `manifest.json` | Identidad, permisos, versión y `update_url` |
+| `background.js` | Alarmas, trabajos y envío con API Compose |
+| `contact-manager.js` y `contact-profile.js` | Contactos, listas y vCard |
+| `dashboard.html`, `dashboard.js`, `style.css` | Interfaz de uso |
+| `email-css.js`, `poster.js`, `photo-db.js` | Plantillas, tarjetas y biblioteca local |
+| `web/` | Web pública Next.js con exportación estática |
+| `tools/` | Compilación XPI reproducible, hash, QA y despliegue |
+| `.github/workflows/` | CI, GitHub Pages y releases |
+
+No hay recopilación de contraseñas SMTP ni un servidor de envío independiente. El equipo debe estar encendido y Thunderbird en ejecución; tampoco se ofrece sincronización bidireccional nativa con el calendario.
+
+## 🧪 Compilación y pruebas
+
+Requisitos locales: Python 3.12+, Node.js 22+ y, para la web, npm.
+
+```bash
+python3 tools/package_release.py --base-url https://lordmanuel.github.io/automail/
+python3 tools/qa_v070.py
+cd web
+npm install
+npm run build
+cd ..
+python3 tools/ci_prepare_site.py --require-package
+```
+
+El archivo compilado aparece en `site/downloads/correo-calendario-0.7.0.xpi`. El manifiesto se genera en `site/updates.json`; el mismo XPI se publica en `docs/downloads/` por GitHub Actions, junto con `docs/updates.json`.
+
+Las pruebas locales cubren sintaxis JS, listas CCO, vCard, fotografías, plantillas de gran tamaño y SHA-256. **La recepción SMTP real, la actualización automática entre versiones y la revisión oficial de Mozilla/ATN no están certificadas**.
+
+## 🚀 Versionado y GitHub Pages
+
+Se utiliza versionado semántico `MAJOR.MINOR.PATCH`: `0.7.0`, `0.7.1`, etc. No sustituir el binario de una versión ya publicada: crear una nueva versión y un nuevo XPI.
+
+- **Pages**: Actions compila Next.js y publica HTML/CSS/JS en `docs/`.
+- **XPI**: el script empaqueta el código runtime y genera SHA-256.
+- **Actualizaciones**: `updates.json` identifica la versión, URL y hash del XPI.
+- **Releases**: GitHub Actions crea una release versionada; no sobrescribe versiones existentes.
+- **QA**: GitHub Actions ejecuta compilación del sitio y pruebas automáticas.
+
+## 📚 Documentación
+
+| Recurso | Archivo |
+| --- | --- |
+| Origen y visión | [ORIGEN_Y_VISION.md](docs/ORIGEN_Y_VISION.md) |
+| Requisitos de producto | [PRD.md](docs/PRD.md) |
+| Arquitectura técnica | [TRD.md](docs/TRD.md) |
+| App Flow | [APP_FLOW.md](docs/APP_FLOW.md) |
+| Metas y roadmap | [ROADMAP.md](docs/ROADMAP.md) |
+| Historial de cambios | [CHANGELOG.md](docs/CHANGELOG.md) |
+| QA | [QA.md](docs/QA.md) |
+| Privacidad | [PRIVACY.md](docs/PRIVACY.md) |
+| Revisión preliminar ATN | [MOZILLA_REVIEW.md](docs/MOZILLA_REVIEW.md) |
+| Despliegue web | [NEXTJS_DEPLOY.md](docs/NEXTJS_DEPLOY.md) |
+
+## ⚖️ Privacidad, licencia y revisión
+
+El complemento puede acceder a contactos, direcciones, fotografías y contenido de mensajes necesario para sus funciones. La información permanece en el perfil Thunderbird, salvo el envío solicitado al servidor SMTP ya configurado. Consulta [PRIVACY.md](docs/PRIVACY.md).
+
+El repositorio **no concede una licencia de código abierto por omisión**; antes de reutilizar o redistribuir material gráfico corporativo, confirma sus permisos. AutoMail es independiente de Mozilla y Thunderbird. La evaluación local no reemplaza la aprobación de ATN.
+
+---
 
 **Agradecimientos a Luis Manuel Fajardo.**
