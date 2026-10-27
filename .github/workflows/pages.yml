@@ -37,22 +37,27 @@ jobs:
           python-version: '3.12'
       - name: Preparar y validar sitio + canal de actualización
         run: python3 tools/ci_prepare_site.py
-      - name: Publicar el sitio estático en /docs (compatibilidad con Pages en modo branch)
+      - name: Publicar Next.js en raíz y /docs (compatibilidad con ambos orígenes Pages)
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p docs/_next docs/previews
-          cp -a _site/_next/. docs/_next/
-          cp -a _site/previews/. docs/previews/
-          cp _site/index.html docs/index.html
-          if [ -f _site/404.html ]; then cp _site/404.html docs/404.html; fi
-          cp _site/updates.json docs/updates.json
-          mkdir -p docs/downloads
+          mkdir -p docs/_next docs/previews docs/downloads _next previews downloads _site/downloads
+          rsync -a --delete _site/_next/ docs/_next/
+          rsync -a --delete _site/_next/ _next/
+          rsync -a --delete _site/previews/ docs/previews/
+          rsync -a --delete _site/previews/ previews/
           rsync -a --delete _site/downloads/ docs/downloads/
-          touch docs/.nojekyll
+          rsync -a --delete _site/downloads/ downloads/
+          cp _site/index.html docs/index.html
+          cp _site/index.html index.html
+          if [ -f _site/404.html ]; then cp _site/404.html docs/404.html; cp _site/404.html 404.html; fi
+          cp _site/updates.json docs/updates.json
+          cp _site/updates.json updates.json
+          touch docs/.nojekyll .nojekyll
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A docs/_next docs/previews docs/downloads docs/index.html docs/updates.json docs/.nojekyll
+          git add -A _next previews downloads index.html updates.json .nojekyll
           if [ -f docs/404.html ]; then git add docs/404.html; fi
           git add web/package-lock.json
           if ! git diff --cached --quiet; then
