@@ -1,0 +1,13 @@
+const assert=require('node:assert/strict');
+const fs=require('fs'),vm=require('vm'),path=require('path');
+const source=fs.readFileSync(path.join(__dirname,'..','contact-profile.js'),'utf8');
+const ctx={};vm.createContext(ctx);vm.runInContext(source,ctx);
+const P=ctx.CCProfile;
+const input='BEGIN:VCARD\r\nVERSION:4.0\r\nUID:123\r\nFN:Nombre Anterior\r\nEMAIL;TYPE=work:viejo@empresa.com\r\nTEL;TYPE=cell:5555-5555\r\nNOTE:Información que debe conservarse\r\nBDAY:1990-10-26\r\nEND:VCARD\r\n';
+let output=P.patch(input,{name:'Maynor Funez',email:'maynor@empresa.com',position:'Asesor de partes',branch:'San Pedro Sula',company:'Yude',code:'0001',birthday:'1990-10-26'});
+for(const p of ['FN:Maynor Funez','EMAIL;TYPE=work:maynor@empresa.com','TITLE:Asesor de partes','X-CC-BRANCH:San Pedro Sula','ORG:Yude','X-EMPLOYEE-CODE:0001','TEL;TYPE=cell:5555-5555','NOTE:Información que debe conservarse','UID:123'])assert.ok(output.includes(p),p);
+output=P.patch(output,{name:'Maynor Funez',email:'maynor@empresa.com',position:'Jefe',branch:'Tegucigalpa',company:'Empresa',code:'001',birthday:''});
+assert.equal((output.match(/^TITLE:/gm)||[]).length,1);assert.ok(!output.includes('BDAY:'));
+for(const invalid of ['2026-02-30','2026-13-05'])assert.throws(()=>P.patch(input,{name:'Luis',email:'luis@test.com',birthday:invalid}));
+assert.throws(()=>P.patch(input,{name:'Luis\nX-HACK:1',email:'luis@test.com'}));
+console.log('V060 VCARD PASS — update FN/EMAIL/TITLE/ORG/BRANCH/CODE/BDAY, preserve TEL/NOTE/UID, reject invalid input');
