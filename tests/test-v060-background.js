@@ -1,0 +1,14 @@
+const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict'),path=require('path');
+const root=path.resolve(__dirname,'..'),store={},actions={};
+let vcard='BEGIN:VCARD\r\nVERSION:4.0\r\nUID:contact123\r\nFN:Maynor Funez\r\nEMAIL;TYPE=work:maynor@example.com\r\nTEL:99999999\r\nEND:VCARD\r\n';
+const listener=n=>({addListener:fn=>actions[n]=fn});
+const api={addressBooks:{async list(){return [{id:'book',name:'Local',readOnly:false,remote:false}];},contacts:{async get(id){return {id,parentId:'book',vCard:vcard};},async update(id,v){assert.equal(id,'c1');vcard=v;},async list(){return [{id:'c1',vCard:vcard}];},async getPhoto(){return null;},async setPhoto(){throw Error('Imagen externa no editable');}},mailingLists:{async list(){return [];} }},accounts:{async list(){return [];}},action:{onClicked:listener('click')},runtime:{getURL:x=>x,onMessage:listener('message'),onStartup:listener('startup'),onInstalled:listener('installed'),async sendMessage(){}},storage:{local:{async get(k){if(typeof k==='string')return {[k]:store[k]};return Object.fromEntries(k.map(x=>[x,store[x]]));},async set(data){Object.assign(store,data);}}},alarms:{onAlarm:listener('alarm'),async create(){}},tabs:{async create(){}},notifications:{async create(){}}};
+const ctx={console,File,atob,Uint8Array,crypto:require('node:crypto').webcrypto,Date,Promise,setTimeout};ctx.globalThis=ctx;ctx.messenger=api;ctx.CC_DEFAULT_TEMPLATES=[];ctx.PhotoDB={get:async()=>null};ctx.CCEmailCSS={compile:h=>h,analyze:()=>({})};ctx.CCPoster={render:async()=>null};vm.createContext(ctx);
+for(const f of ['contact-profile.js','background.js'])vm.runInContext(fs.readFileSync(path.join(root,f),'utf8'),ctx);
+(async()=>{await new Promise(r=>setTimeout(r,50));
+const res=await actions.message({type:'updateContactProfile',id:'c1',bookId:'book',profile:{name:'Maynor Funez',email:'maynor@example.com',position:'Supervisor de partes',branch:'La Ceiba',company:'Grupo Yude',code:'0001',birthday:'1990-10-26'}});
+assert.equal(res.contact.position,'Supervisor de partes');assert.equal(res.contact.branch,'La Ceiba');assert.ok(vcard.includes('TEL:99999999'));assert.ok(vcard.includes('UID:contact123'));
+const dir=await actions.message({type:'contactDirectory'});assert.equal(dir.contacts[0].code,'0001');
+assert.equal(dir.contacts[0].company,'Grupo Yude');assert.equal(dir.contacts[0].birthday,'1990-10-26');
+console.log('V060 BACKEND PASS — updated contact vCard through Thunderbird API mock and preserved UID/TEL');
+})().catch(e=>{console.error(e);process.exitCode=1;});
