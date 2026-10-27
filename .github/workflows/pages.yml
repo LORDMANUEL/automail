@@ -47,10 +47,12 @@ jobs:
           cp _site/index.html docs/index.html
           if [ -f _site/404.html ]; then cp _site/404.html docs/404.html; fi
           cp _site/updates.json docs/updates.json
+          mkdir -p docs/downloads
+          rsync -a --delete _site/downloads/ docs/downloads/
           touch docs/.nojekyll
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A docs/_next docs/previews docs/index.html docs/updates.json docs/.nojekyll
+          git add -A docs/_next docs/previews docs/downloads docs/index.html docs/updates.json docs/.nojekyll
           if [ -f docs/404.html ]; then git add docs/404.html; fi
           git add web/package-lock.json
           if ! git diff --cached --quiet; then
